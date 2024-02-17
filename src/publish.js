@@ -19,9 +19,8 @@ import {imageDataToCanvas, canvasToBlob, unindent} from "./utils.js";
 import {
   generateInsecureKeyFromString,
   decryptStringWithKey,
+  encryptStringWithKey,
 } from "./crypto.js";
-
-import * as hookData from "env:discord:HOOK_URL";
 
 async function lol() {}
 lol();
@@ -68,8 +67,11 @@ publishbtn.onclick = async () => {
   try {
     const keyphrase = bottest.value.toLowerCase();
     const key = await generateInsecureKeyFromString(crypto, keyphrase);
+    // These data strings, with the correct keyphrase, decode to the hook for the #jxl-art channel on the JPEG XL server.
+    const hookIv = new Uint8Array([143, 99, 78, 22, 50, 55, 74, 140, 203, 26, 107, 171, 35, 25, 146, 95]);
+    const hookData = new Uint8Array([178, 110, 237, 203, 46, 189, 45, 234, 140, 26, 76, 186, 131, 180, 23, 174, 244, 241, 33, 247, 3, 203, 165, 153, 118, 202, 89, 204, 91, 129, 99, 35, 195, 81, 148, 60, 116, 149, 150, 112, 4, 214, 110, 239, 183, 60, 206, 4, 182, 74, 246, 229, 212, 10, 47, 185, 67, 192, 159, 67, 132, 29, 9, 178, 171, 209, 126, 171, 80, 90, 233, 201, 39, 11, 146, 45, 106, 65, 182, 42, 203, 6, 1, 253, 82, 116, 119, 172, 77, 201, 151, 251, 85, 234, 2, 78, 222, 116, 116, 92, 12, 18, 93, 74, 81, 121, 91, 2, 179, 13, 120, 95, 240, 179, 187, 183, 121, 3, 48, 95, 136, 231, 195, 77, 238, 39, 92, 253]);
     hookURL = JSON.parse(
-      await decryptStringWithKey(crypto, hookData.data, hookData.iv, key)
+      await decryptStringWithKey(crypto, hookData, hookIv, key)
     );
   } catch (e) {
     console.log(e);
@@ -87,7 +89,7 @@ publishbtn.onclick = async () => {
     image/jxl
     ${jxlData.byteLength} bytes
 
-    [source tree](https://jxl-art.surma.technology/?${new URLSearchParams({
+    [source tree](https://jxl-art.lucaversari.it/?${new URLSearchParams({
     zcode,
   }).toString()})
   `);
