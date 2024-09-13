@@ -1,5 +1,5 @@
 CODEC_URL = https://github.com/libjxl/libjxl.git
-CODEC_VERSION = v0.10.0
+CODEC_VERSION = v0.11.0
 CODEC_DIR = node_modules/jxl
 CODEC_BUILD_ROOT := $(CODEC_DIR)/build
 CODEC_BUILD_DIR := $(CODEC_BUILD_ROOT)
@@ -35,6 +35,7 @@ $(OUT_JS): jxl.cpp $(CODEC_BUILD_DIR)/lib/libjxl.a $(CODEC_BUILD_DIR)/lib/libjxl
 		-s EXPORT_NAME="$(basename $(@F))" \
 		-o $@ \
 		$+ \
+		$(CODEC_DIR)/tools/no_memory_manager.cc \
 		$(CODEC_DIR)/tools/jxl_from_tree.cc \
 		$(CODEC_BUILD_DIR)/third_party/brotli/libbrotlidec.a \
 		$(CODEC_BUILD_DIR)/third_party/brotli/libbrotlienc.a \
@@ -60,6 +61,7 @@ $(CODEC_DIR)/CMakeLists.txt:
 	git -C $(@D) fetch $(CODEC_URL) $(CODEC_VERSION) --depth 1
 	git -C $(@D) checkout FETCH_HEAD
 	git -C $(@D) submodule update --init --depth 1 --recursive --jobs `nproc`
+	sed -i 's/int buffering = -1;/int buffering = 0;/' $(@D)/lib/jxl/enc_params.h
 
 clean:
 	$(RM) $(OUT_JS) $(OUT_WASM) $(OUT_WORKER)

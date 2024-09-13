@@ -11,6 +11,7 @@
  * limitations under the License.
  */
 
+#include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
 
@@ -25,10 +26,6 @@
 #include <sstream>
 
 using namespace emscripten;
-
-thread_local const val Uint8ClampedArray = val::global("Uint8ClampedArray");
-thread_local const val ImageData = val::global("ImageData");
-thread_local const val Uint8Array = val::global("Uint8Array");
 
 // R, G, B, A
 #define COMPONENTS_PER_PIXEL 4
@@ -45,11 +42,11 @@ thread_local const val Uint8Array = val::global("Uint8Array");
     if (a_ != b_) {                                                            \
       fprintf(stderr, "Assertion failure (%d): %s (%d) != %s (%d)\n",          \
               __LINE__, #a, a_, #b, b_);                                       \
-      return val::null();                                                      \
+      return {val::null()};                                                    \
     }                                                                          \
   }
 
-val decode(std::string data) {
+std::vector<val> decode(std::string data) {
   std::unique_ptr<
       JxlDecoder,
       std::integral_constant<decltype(&JxlDecoderDestroy), JxlDecoderDestroy>>
@@ -86,16 +83,16 @@ val decode(std::string data) {
             JxlDecoderImageOutBufferSize(dec.get(), &format, &buffer_size));
   EXPECT_EQ(buffer_size, component_count);
 
-  auto byte_pixels = std::make_unique<uint8_t[]>(component_count);
+  static std::unique_ptr<uint8_t[]> byte_pixels;
+  byte_pixels = std::make_unique<uint8_t[]>(component_count);
 
   EXPECT_EQ(JXL_DEC_SUCCESS,
             JxlDecoderSetImageOutBuffer(dec.get(), &format, byte_pixels.get(),
                                         component_count));
   EXPECT_EQ(JXL_DEC_FULL_IMAGE, JxlDecoderProcessInput(dec.get()));
 
-  return ImageData.new_(Uint8ClampedArray.new_(typed_memory_view(
-                            component_count, byte_pixels.get())),
-                        info.xsize, info.ysize);
+  return {val(typed_memory_view(component_count, byte_pixels.get())),
+          val(info.xsize), val(info.ysize)};
 }
 
 namespace jpegxl::tools {
@@ -111,12 +108,15 @@ val jxl_from_tree(std::string in) {
   std::ifstream jxlImg("/out.jxl");
   std::stringstream jxlStream;
   jxlStream << jxlImg.rdbuf();
-  std::string jxlData = jxlStream.str();
+  static std::string jxlData;
+  jxlData = jxlStream.str();
   jxlImg.close();
-  return Uint8Array.new_(typed_memory_view(jxlData.length(), jxlData.c_str()));
+  return val(
+      typed_memory_view(jxlData.length(), (const uint8_t *)jxlData.c_str()));
 }
 
 EMSCRIPTEN_BINDINGS(my_module) {
   emscripten::function("jxl_from_tree", &jxl_from_tree);
   emscripten::function("decode", &decode);
+  register_vector<val>("vector<val>");
 }
