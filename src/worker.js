@@ -30,11 +30,7 @@ expose({
   },
   async decodeJxl(data) {
     const instance = await instanceP;
-    const imageDataAndSize = instance.decode(data);
-    const imageData = imageDataAndSize.get(0);
-    const xsize = imageDataAndSize.get(1);
-    const ysize = imageDataAndSize.get(2);
-    return new ImageData(new Uint8ClampedArray(imageData), xsize, ysize);
+    return instance.decode(data);
   },
   prettier,
 });

@@ -58,8 +58,7 @@ async function main() {
     return;
   }
 
-  const cvs = imageDataToCanvas(imageData);
-  blob = await canvasToBlob(cvs, {name: "art.jpg", type: "image/jpeg"});
+  blob = new File([new Blob([imageData])], 'art.png', { type: 'image/png' });
   img.src = URL.createObjectURL(blob);
   publishbtn.disabled = false;
 }
