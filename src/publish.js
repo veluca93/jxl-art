@@ -88,9 +88,9 @@ publishbtn.onclick = async () => {
     image/jxl
     ${jxlData.byteLength} bytes
 
-    https://jxl-art.surma.technology/?${new URLSearchParams({
+    [source tree](https://jxl-art.surma.technology/?${new URLSearchParams({
     zcode,
-  }).toString()}
+  }).toString()})
   `);
   formData.append("payload_json", JSON.stringify({content}));
   formData.append("file", blob);
