@@ -19,6 +19,8 @@
 #include <jxl/cms.h>
 #include <jxl/color_encoding.h>
 #include <jxl/decode.h>
+#include "lib/extras/dec/jxl.h"
+#include "lib/extras/enc/apng.h"
 
 #include <fstream>
 #include <iostream>
@@ -46,53 +48,22 @@ using namespace emscripten;
     }                                                                          \
   }
 
-std::vector<val> decode(std::string data) {
-  std::unique_ptr<
-      JxlDecoder,
-      std::integral_constant<decltype(&JxlDecoderDestroy), JxlDecoderDestroy>>
-      dec(JxlDecoderCreate(nullptr));
-  EXPECT_EQ(JXL_DEC_SUCCESS,
-            JxlDecoderSubscribeEvents(dec.get(), JXL_DEC_BASIC_INFO |
-                                                     JXL_DEC_COLOR_ENCODING |
-                                                     JXL_DEC_FULL_IMAGE));
-  EXPECT_EQ(JXL_DEC_SUCCESS, JxlDecoderSetCms(dec.get(), *JxlGetDefaultCms()));
-  JxlColorEncoding encoding;
-  encoding.color_space = JXL_COLOR_SPACE_RGB;
-  encoding.primaries = JXL_PRIMARIES_SRGB;
-  encoding.transfer_function = JXL_TRANSFER_FUNCTION_SRGB;
-  encoding.white_point = JXL_WHITE_POINT_D65;
-  encoding.rendering_intent = JXL_RENDERING_INTENT_RELATIVE;
+val decode(std::string data) {
+  auto png_encoder = jxl::extras::GetAPNGEncoder();
+  jxl::extras::PackedPixelFile ppf;
+  auto accepted_formats = png_encoder->AcceptedFormats();
+  jxl::extras::JXLDecompressParams dparams;
+  dparams.output_bitdepth.type = JXL_BIT_DEPTH_FROM_CODESTREAM;
+  dparams.accepted_formats = accepted_formats;
 
-  auto next_in = (const uint8_t *)data.c_str();
-  auto avail_in = data.size();
-  JxlDecoderSetInput(dec.get(), next_in, avail_in);
-  EXPECT_EQ(JXL_DEC_BASIC_INFO, JxlDecoderProcessInput(dec.get()));
-  JxlBasicInfo info;
-  EXPECT_EQ(JXL_DEC_SUCCESS, JxlDecoderGetBasicInfo(dec.get(), &info));
-  size_t pixel_count = info.xsize * info.ysize;
-  size_t component_count = pixel_count * COMPONENTS_PER_PIXEL;
+  size_t decoded_bytes;
+  jxl::extras::DecodeImageJXL((const uint8_t *)data.c_str(), data.size(), dparams, &decoded_bytes, &ppf);
+  jxl::extras::EncodedImage encoded_image;
+  if (!png_encoder->Encode(ppf, &encoded_image, nullptr)) return val();
+  static std::vector<uint8_t> png;
+  png = encoded_image.bitstreams.front();
 
-  EXPECT_EQ(JXL_DEC_COLOR_ENCODING, JxlDecoderProcessInput(dec.get()));
-  EXPECT_EQ(JXL_DEC_SUCCESS,
-            JxlDecoderSetOutputColorProfile(dec.get(), &encoding, NULL, 0));
-  static const JxlPixelFormat format = {COMPONENTS_PER_PIXEL, JXL_TYPE_UINT8,
-                                        JXL_LITTLE_ENDIAN, 0};
-  EXPECT_EQ(JXL_DEC_NEED_IMAGE_OUT_BUFFER, JxlDecoderProcessInput(dec.get()));
-  size_t buffer_size;
-  EXPECT_EQ(JXL_DEC_SUCCESS,
-            JxlDecoderImageOutBufferSize(dec.get(), &format, &buffer_size));
-  EXPECT_EQ(buffer_size, component_count);
-
-  static std::unique_ptr<uint8_t[]> byte_pixels;
-  byte_pixels = std::make_unique<uint8_t[]>(component_count);
-
-  EXPECT_EQ(JXL_DEC_SUCCESS,
-            JxlDecoderSetImageOutBuffer(dec.get(), &format, byte_pixels.get(),
-                                        component_count));
-  EXPECT_EQ(JXL_DEC_FULL_IMAGE, JxlDecoderProcessInput(dec.get()));
-
-  return {val(typed_memory_view(component_count, byte_pixels.get())),
-          val(info.xsize), val(info.ysize)};
+  return val(typed_memory_view(png.size(), png.data()));
 }
 
 namespace jpegxl::tools {

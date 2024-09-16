@@ -24,13 +24,12 @@ const {
   share,
   publish,
   log,
-  cvs,
+  img,
   jxl,
   png,
   zoom,
   prettier,
 } = document.all;
-const ctx = cvs.getContext("2d");
 
 function showLog(error) {
   log.innerHTML = error;
@@ -49,6 +48,7 @@ publish.onclick = async (ev) => {
 };
 
 let jxlData;
+let pngUrl;
 async function rerender() {
   let imageData;
   try {
@@ -60,9 +60,9 @@ async function rerender() {
     /(\([^)]+\))?$/,
     `(${jxlData.byteLength} bytes)`
   );
-  ctx.canvas.width = imageData.width;
-  ctx.canvas.height = imageData.height;
-  ctx.putImageData(imageData, 0, 0);
+  const blob = new Blob([imageData], { type: 'image/png' });
+  pngUrl = URL.createObjectURL(blob);
+  img.src = pngUrl;
 }
 
 async function compile() {
@@ -111,16 +111,14 @@ prettier.onclick = async () => {
 };
 
 png.onclick = async () => {
-  const blob = await new Promise((resolve) => cvs.toBlob(resolve, "image/png"));
-  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
+  a.href = pngUrl;
   a.download = "art.png";
   a.click();
 };
 
 zoom.onchange = () => {
-  cvs.classList.toggle("pixelated", zoom.scale > 1);
+  img.classList.toggle("pixelated", zoom.scale > 1);
 };
 
 function onCodeChange() {

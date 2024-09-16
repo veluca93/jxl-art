@@ -58,8 +58,7 @@ async function main() {
     return;
   }
 
-  const cvs = imageDataToCanvas(imageData);
-  blob = await canvasToBlob(cvs, {name: "art.jpg", type: "image/jpeg"});
+  blob = new File([new Blob([imageData])], 'art.png', { type: 'image/png' });
   img.src = URL.createObjectURL(blob);
   publishbtn.disabled = false;
 }
@@ -88,9 +87,9 @@ publishbtn.onclick = async () => {
     image/jxl
     ${jxlData.byteLength} bytes
 
-    https://jxl-art.surma.technology/?${new URLSearchParams({
+    [source tree](https://jxl-art.surma.technology/?${new URLSearchParams({
     zcode,
-  }).toString()}
+  }).toString()})
   `);
   formData.append("payload_json", JSON.stringify({content}));
   formData.append("file", blob);
