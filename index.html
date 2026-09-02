@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#121212" />
+    <meta name="google" content="notranslate" />
+    <title>JXL Art</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>JXL Art</h1>
+        <div class="header-right">
+          <span id="jxl-support" class="jxl-support hidden" title="Your browser supports JXL natively!">
+            <span class="status-dot"></span>
+            JXL Native
+          </span>
+          <a href="https://github.com/libjxl/libjxl" target="_blank" class="powered-by">
+            Powered by libjxl
+          </a>
+        </div>
+      </header>
+
+      <main id="main">
+        <div class="editor-panel">
+          <div class="code-editor">
+            <div class="line-numbers" id="line-numbers"></div>
+            <div class="code-wrapper">
+              <pre id="code-highlight" aria-hidden="true"></pre>
+              <textarea id="code" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off">Bitdepth 8
+Width 512
+Height 512
+
+if c > 1
+  if y > 256
+    - Set 200
+    if x > 256
+      - Set 100
+      - Set 50
+  if x > 256
+    - Gradient + 50
+    - N - 20
+if y > 256
+  - W + 30
+  - Set 180
+</textarea>
+              <div id="autocomplete" class="autocomplete hidden"></div>
+            </div>
+          </div>
+          <div class="controls">
+            <button id="run" class="primary" title="Run (Ctrl+Enter)">Run ▶️</button>
+            <button id="presets-btn" title="Load preset examples">Presets 🎨</button>
+            <button id="share" title="Copy share URL (Ctrl+S)">Share 🔗</button>
+            <button id="prettier" title="Format code (Ctrl+Shift+F)">Prettify ✨</button>
+            <button id="help" title="Show help">Help 📖</button>
+            <span id="log"></span>
+          </div>
+        </div>
+
+        <div class="resizer" id="resizer"></div>
+
+        <div class="preview-panel">
+          <div class="image-container" id="image-container">
+            <div class="placeholder">Click&nbsp;<strong>Run ▶️</strong>&nbsp;to generate your JXL art</div>
+            <div class="image-wrapper" id="image-wrapper">
+              <img id="preview" alt="Generated JXL Art" />
+            </div>
+            <div class="download-controls">
+              <button id="download-jxl" disabled>Download JXL ⬇️</button>
+              <button id="download-png" disabled>Download PNG ⬇️</button>
+            </div>
+            <div class="zoom-controls">
+              <button id="zoom-out" title="Zoom out">−</button>
+              <span id="zoom-level">100%</span>
+              <button id="zoom-in" title="Zoom in">+</button>
+              <button id="zoom-fit" title="Fit to view">⊡</button>
+              <button id="zoom-reset" title="Reset (100%)">1:1</button>
+            </div>
+          </div>
+          <div class="credits">
+            <a href="https://github.com/hjanuschka/jxl-art" target="_blank">Source</a>
+            <span>•</span>
+            <a href="https://www.januschka.com/chromium-jxl-resurrection.html" target="_blank">JXL Blog Post</a>
+          </div>
+        </div>
+      </main>
+
+      <dialog id="help-dialog">
+        <article id="help-content"></article>
+        <button id="close-help">Close</button>
+      </dialog>
+
+      <dialog id="presets-dialog">
+        <h2>Presets</h2>
+        <div id="presets-grid" class="presets-grid"></div>
+        <button id="close-presets">Close</button>
+      </dialog>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

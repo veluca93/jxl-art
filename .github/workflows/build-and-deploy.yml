@@ -1,0 +1,118 @@
+name: Build and Deploy
+
+on:
+  # Run daily at midnight UTC
+  schedule:
+    - cron: '0 0 * * *'
+  # Run on push to main
+  push:
+    branches:
+      - main
+      - modernize-jxl-art
+  # Allow manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for GitHub Pages
+        run: npm run build:ghpages
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  update-wasm:
+    # Only rebuild WASM on schedule (daily) or manual trigger
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get current libjxl commit
+        id: current
+        run: |
+          if [ -f wasm/libjxl/build-info.json ]; then
+            CURRENT=$(jq -r '.commit // "none"' wasm/libjxl/build-info.json)
+          else
+            CURRENT="none"
+          fi
+          echo "commit=$CURRENT" >> $GITHUB_OUTPUT
+
+      - name: Get latest libjxl commit
+        id: latest
+        run: |
+          LATEST=$(git ls-remote https://github.com/libjxl/libjxl.git HEAD | cut -f1 | head -c7)
+          echo "commit=$LATEST" >> $GITHUB_OUTPUT
+
+      - name: Check if update needed
+        id: check
+        run: |
+          if [ "${{ steps.current.outputs.commit }}" = "${{ steps.latest.outputs.commit }}" ]; then
+            echo "needed=false" >> $GITHUB_OUTPUT
+            echo "Already at latest libjxl commit: ${{ steps.latest.outputs.commit }}"
+          else
+            echo "needed=true" >> $GITHUB_OUTPUT
+            echo "Update needed: ${{ steps.current.outputs.commit }} -> ${{ steps.latest.outputs.commit }}"
+          fi
+
+      - name: Setup Emscripten
+        if: steps.check.outputs.needed == 'true'
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 'latest'
+
+      - name: Build WASM from latest libjxl
+        if: steps.check.outputs.needed == 'true'
+        run: |
+          chmod +x scripts/build-libjxl.sh
+          ./scripts/build-libjxl.sh
+
+      - name: Commit and push updated WASM
+        if: steps.check.outputs.needed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add wasm/libjxl/
+          git commit -m "Update libjxl WASM to ${{ steps.latest.outputs.commit }}
+
+          Built from https://github.com/libjxl/libjxl/commit/${{ steps.latest.outputs.commit }}"
+          git push

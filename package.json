@@ -1,46 +1,34 @@
 {
-  "name": "starterkit",
-  "version": "0.0.1",
+  "name": "jxl-art",
+  "version": "2.0.0",
   "type": "module",
-  "description": "",
+  "description": "Create art using JPEG XL prediction trees",
   "scripts": {
-    "build": "rollup -c",
-    "watch": "rollup -cw",
-    "serve": "superstatic -p 5000 build",
-    "dev": "run-p watch serve"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "build:ghpages": "tsc && BASE_PATH=/jxl-art/ vite build",
+    "preview": "vite preview",
+    "build:wasm": "./scripts/build-libjxl.sh",
+    "validate:presets": "node scripts/validate-presets.js"
   },
-  "keywords": [],
-  "author": "Surma <surma@surma.dev>",
+  "keywords": [
+    "jpeg-xl",
+    "jxl",
+    "art",
+    "wasm",
+    "image"
+  ],
   "license": "Apache-2.0",
-  "dependencies": {
-    "@rollup/plugin-node-resolve": "^15.2.3",
-    "@rollup/plugin-swc": "^0.3.0",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@surma/rollup-plugin-off-main-thread": "^2.2.3",
-    "@swc/core": "^1.4.2",
-    "comlink": "^4.4.1",
-    "ejs": "^3.1.9",
-    "idb-keyval": "^6.2.1",
-    "pinch-zoom-element": "^1.1.1",
-    "pointer-tracker": "^2.5.3",
-    "postcss": "^8.4.35",
-    "rimraf": "^5.0.5",
-    "rollup": "^4.12.0",
-    "rollup-plugin-postcss": "^4.0.2",
-    "web-streams-polyfill": "^3.3.3"
-  },
   "devDependencies": {
-    "lint-staged": "^15.2.2",
-    "npm-run-all": "^4.1.5",
-    "prettier": "^3.2.5",
-    "simple-git-hooks": "^2.9.0",
-    "superstatic": "^9.0.3"
+    "@types/pako": "^2.0.4",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.0",
+    "vite-plugin-top-level-await": "^1.4.1",
+    "vite-plugin-wasm": "^3.3.0"
   },
-  "lint-staged": {
-    "*.{html.ejs,as,js,css,md}": "prettier --write",
-    "*.{js,css,md}": "prettier --write"
-  },
-  "simple-git-hooks": {
-    "pre-commit": "npx lint-staged"
+  "dependencies": {
+    "comlink": "^4.4.1",
+    "idb-keyval": "^6.2.1",
+    "pako": "^2.1.0"
   }
 }

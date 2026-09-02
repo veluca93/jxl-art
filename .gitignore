@@ -1,4 +1,27 @@
-node_modules
-build
-dist
-.vscode
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.build/
+
+# WASM build artifacts (committed pre-built)
+wasm/libjxl/build-info.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local env
+.env
+.env.local
